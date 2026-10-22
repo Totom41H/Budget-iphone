@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15151c">
+<title>Budget</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon.svg">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #111116;
+  --panel: #1c1c25;
+  --line: #30303b;
+  --text: #f5f4fa;
+  --muted: #aaa8ba;
+  --accent: #ad91ff;
+  --green: #80d9ad;
+  --red: #ff858c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px system-ui, -apple-system, sans-serif;
+}
+header { padding: 22px 18px 12px; max-width: 850px; margin: auto; }
+h1 { font-size: 28px; margin: 0; }
+h2 { font-size: 20px; margin: 8px 0 14px; }
+h3 { font-size: 16px; margin: 0 0 10px; }
+small, .muted { color: var(--muted); }
+main { max-width: 850px; margin: auto; padding: 10px 16px 100px; }
+.panel, .card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 17px; padding: 16px; margin-bottom: 12px;
+}
+.hero { background: linear-gradient(135deg,#29223f,#1c1c25); border-color: #4b3c6c; }
+.amount { font-size: 32px; font-weight: 750; letter-spacing: -1px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric { background: #ffffff08; border-radius: 12px; padding: 12px; min-width: 0; }
+.metric strong { display: block; font-size: 19px; margin-top: 5px; overflow-wrap: anywhere; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.progress { height: 7px; background: #393844; border-radius: 20px; overflow: hidden; margin: 9px 0 5px; }
+.progress span { display: block; height: 100%; background: var(--accent); border-radius: 20px; }
+input, select, button { font: inherit; }
+input, select {
+  background: #121219; color: var(--text); border: 1px solid #41404e;
+  border-radius: 10px; padding: 11px; width: 100%; min-width: 0;
+}
+button {
+  background: var(--accent); color: #17121f; border: 0;
+  border-radius: 11px; padding: 12px 15px; font-weight: 700; cursor: pointer;
+}
+button.secondary { background: #34323f; color: var(--text); }
+button.danger { background: #512a32; color: #ffdce0; }
+button:active { opacity: .8; }
+.formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label { font-size: 12px; color: var(--muted); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #17171fef; backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line); display: flex; justify-content: center;
+  padding: 9px 4px calc(9px + env(safe-area-inset-bottom)); z-index: 5;
+}
+nav button {
+  background: transparent; color: var(--muted); padding: 7px 4px;
+  flex: 1; max-width: 150px; font-size: 12px;
+}
+nav button.active { background: #302944; color: #d5c5ff; }
+nav button span { display: block; font-size: 20px; margin-bottom: 2px; }
+.hidden { display: none !important; }
+.category { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.category:last-child { border-bottom: 0; }
+.chart { display: flex; align-items: end; gap: 8px; height: 155px; padding-top: 15px; }
+.barcol { flex: 1; min-width: 0; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: end; align-items: center; gap: 6px; }
+.bar { width: min(34px,75%); min-height: 2px; background: var(--accent); border-radius: 7px 7px 2px 2px; }
+.barlabel { font-size: 10px; color: var(--muted); }
+.tx { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.tx:last-child { border-bottom: 0; }
+.tx button { padding: 7px 9px; font-size: 12px; }
+.notice { padding: 12px; border-radius: 10px; background: #292638; color: #d9d0ff; margin-bottom: 12px; font-size: 13px; }
+@media (min-width:650px) { .grid.three { grid-template-columns: repeat(3,1fr); } }
+@media (max-width:390px) {
+  main { padding-left: 11px; padding-right: 11px; }
+  .panel, .card { padding: 12px; }
+  .amount { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div><small>GESTION PERSONNELLE</small><h1>Budget<span style="color:var(--accent)">.</span></h1></div>
+    <span style="font-size:28px">◉</span>
+  </div>
+</header>
+
+<main>
+<section id="home">
+  <div class="panel hero">
+    <div class="row"><span class="muted">Salaire réellement reçu</span><span>💶</span></div>
+    <div class="amount" id="salaryDisplay">2 200 €</div>
+    <div class="grid" style="margin-top:15px">
+      <div class="metric"><small>Dépenses du mois</small><strong id="homeSpent">0 €</strong></div>
+      <div class="metric"><small>Reste après dépenses</small><strong id="homeRemaining">2 200 €</strong></div>
+    </div>
+    <div class="row" style="margin-top:16px"><small>Part du salaire dépensée</small><strong id="salaryPercent">0 %</strong></div>
+    <div class="progress"><span id="salaryBar" style="width:0%"></span></div>
+  </div>
+
+  <div class="panel">
+    <h3>Salaire réellement perçu ce mois-ci</h3>
+    <div class="field">
+      <label for="actualSalary">Montant reçu sur ton compte (€)</label>
+      <input id="actualSalary" type="number" min="0" step="0.01" placeholder="Ex. 2350">
+    </div>
+    <div id="salaryAdjustment" class="notice" style="margin-top:12px;margin-bottom:0"></div>
+    <small>La variation ajuste automatiquement la catégorie Autre. Chaque mois conserve son propre salaire.</small>
+  </div>
+
+  <div class="row"><h2>Vue du mois</h2><input id="homeMonth" type="month" style="width:auto" aria-label="Mois affiché"></div>
+  <div class="grid">
+    <div class="card"><small>Budget total prévu</small><h2 id="homeBudget">2 200 €</h2></div>
+    <div class="card"><small>Épargne prévue</small><h2 id="homeSavings">400 €</h2></div>
+  </div>
+  <div class="panel"><h3>Mes enveloppes</h3><div id="homeCategories"></div></div>
+  <button style="width:100%" onclick="show('expenses')">＋ Ajouter une dépense</button>
+</section>
+
+<section id="budgets" class="hidden">
+  <h2>Mes budgets</h2>
+  <div class="row" style="margin-bottom:12px">
+    <span class="muted">Mois sélectionné</span>
+    <input id="budgetMonth" type="month" style="width:auto">
+  </div>
+  <div class="notice">« Part du salaire » compare l'enveloppe au salaire réel. « Consommé » compare les dépenses au budget disponible du mois.</div>
+  <div class="panel">
+    <div class="row"><span class="muted">Total des enveloppes</span><strong id="budgetTotal">2 200 €</strong></div>
+    <div id="budgetCategories"></div>
+  </div>
+</section>
+
+<section id="expenses" class="hidden">
+  <h2>Ajouter une dépense</h2>
+  <div class="panel">
+    <form id="expenseForm">
+      <input type="hidden" id="editId">
+      <div class="formgrid">
+        <div class="field"><label for="txDate">Date</label><input id="txDate" type="date" required></div>
+        <div class="field"><label for="txAmount">Montant (€)</label><input id="txAmount" type="number" min="0.01" step="0.01" placeholder="12,50" required></div>
+        <div class="field"><label for="txCategory">Catégorie</label><select id="txCategory"></select></div>
+        <div class="field"><label for="txLabel">Description</label><input id="txLabel" placeholder="Ex. courses"></div>
+      </div>
+      <div class="actions">
+        <button id="saveTx" type="submit">Enregistrer</button>
+        <button type="button" class="secondary" onclick="resetForm()">Annuler</button>
+      </div>
+    </form>
+  </div>
+  <div class="row"><h2>Historique</h2><input id="txMonth" type="month" style="width:auto"></div>
+  <div class="panel" id="transactions"></div>
+</section>
+
+<section id="stats" class="hidden">
+  <h2>Statistiques mensuelles</h2>
+  <div class="panel">
+    <div class="field"><label for="statsMonth">Mois à analyser</label><input id="statsMonth" type="month"></div>
+    <div class="grid" style="margin-top:12px">
+      <div class="metric"><small>Salaire reçu</small><strong id="statsSalary">2 200 €</strong></div>
+      <div class="metric"><small>Total dépensé</small><strong id="statsSpent">0 €</strong></div>
+      <div class="metric"><small>% du salaire dépensé</small><strong id="statsPercent">0 %</strong></div>
+      <div class="metric"><small>Reste après dépenses</small><strong id="statsRemaining">2 200 €</strong></div>
+    </div>
+  </div>
+  <div class="panel"><h3>Dépenses par catégorie</h3><div id="statsCategories"></div></div>
+  <div class="panel">
+    <h3>Évolution mensuelle</h3>
+    <small class="muted">Dépenses totales des six derniers mois</small>
+    <div class="chart" id="monthlyChart"></div>
+    <small class="muted">Les mois sans opérations apparaissent à zéro.</small>
+  </div>
+  <div class="panel"><h3>Récapitulatif des mois</h3><div id="monthlyHistory"></div></div>
+</section>
+
+<section id="settings" class="hidden">
+  <h2>Réglages</h2>
+  <div class="panel">
+    <h3>Budgets de référence</h3>
+    <p class="muted">Ces montants sont les enveloppes de base. Le budget Autre s'ajuste selon le salaire réel de chaque mois.</p>
+    <form id="settingsForm">
+      <div id="budgetInputs"></div>
+      <button type="submit" style="width:100%;margin-top:14px">Enregistrer les budgets</button>
+    </form>
+    <div class="row" style="margin-top:15px"><span>Total de référence</span><strong id="settingsTotal">2 200 €</strong></div>
+  </div>
+  <div class="panel">
+    <h3>Sauvegarde</h3>
+    <p class="muted">Exporte tes dépenses, tes salaires mensuels et tes budgets dans un fichier JSON. Conserve ce fichier pour restaurer tes données.</p>
+    <div class="actions">
+      <button onclick="exportData()">Exporter mes données</button>
+      <button class="secondary" onclick="document.getElementById('importFile').click()">Importer une sauvegarde</button>
+      <input id="importFile" type="file" accept=".json,application/json" class="hidden">
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Stockage</h3>
+    <p class="muted">Les données restent dans ce navigateur et ne se synchronisent pas automatiquement avec tes autres appareils. Fais régulièrement une sauvegarde.</p>
+    <button class="danger" onclick="resetAll()">Effacer toutes les données</button>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button class="active" data-page="home" onclick="show('home')"><span>⌂</span>Accueil</button>
+  <button data-page="budgets" onclick="show('budgets')"><span>▤</span>Budgets</button>
+  <button data-page="stats" onclick="show('stats')"><span>▥</span>Statistiques</button>
+  <button data-page="settings" onclick="show('settings')"><span>⚙</span>Réglages</button>
+</nav>
+
+<script>
+"use strict";
+
+const REFERENCE_SALARY = 2200;
+const DEFAULT_CATEGORIES = [
+  ["Logement",600], ["Courses",200], ["Train",300], ["Voiture",200],
+  ["Restaurants",100], ["Bar",80], ["Shopping",50], ["Loisirs",100],
+  ["Abonnements",57], ["Épargne",400], ["Autre",113]
+];
+const STORAGE_KEY = "budget-app-v3";
+
+const currentMonth = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+};
+const today = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+};
+const money = n => (Number(n)||0).toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
+const pct = n => (Number(n)||0).toLocaleString("fr-FR",{maximumFractionDigits:1}) + " %";
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+let data;
+
+function loadData() {
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch {}
+
+  if (!old) {
+    // Importer les données de la version précédente si elles existent.
+    try { old = JSON.parse(localStorage.getItem("budget-app-v2") || "null"); } catch {}
+  }
+
+  const oldCategories = Array.isArray(old?.categories) ? old.categories : [];
+  const categories = DEFAULT_CATEGORIES.map(([name,defaultBudget]) => {
+    const match = oldCategories.find(c => c.name === name);
+    return { name, budget: Math.max(0, Number(match?.budget ?? defaultBudget) || 0) };
+  });
+
+  data = {
+    salary: REFERENCE_SALARY,
+    categories,
+    transactions: Array.isArray(old?.transactions) ? old.transactions : [],
+    monthSalaries: old?.monthSalaries && typeof old.monthSalaries === "object" ? old.monthSalaries : {}
+  };
+
+  data.transactions = data.transactions.filter(t =>
+    t && t.id && /^\d{4}-\d{2}-\d{2}$/.test(t.date) &&
+    Number(t.amount) > 0 &&
+    categories.some(c => c.name === t.category)
+  );
+
+  // Migration des anciennes sauvegardes qui ne stockaient pas le salaire par mois.
+  data.salary = REFERENCE_SALARY;
+}
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  render();
+}
+
+function selectedMonth(id) {
+  return document.getElementById(id)?.value || currentMonth();
+}
+
+function monthTransactions(month) {
+  return data.transactions.filter(t => t.date.slice(0,7) === month);
+}
+
+function sumAmounts(items) {
+  return items.reduce((total,t) => total + (Number(t.amount)||0),0);
+}
+
+function monthSalary(month) {
+  const value = data.monthSalaries[month];
+  return value === undefined ? REFERENCE_SALARY : Math.max(0,Number(value)||0);
+}
+
+function setMonthSalary(month,value) {
+  data.monthSalaries[month] = Math.max(0,Number(value)||0);
+  persist();
+}
+
+function monthBudget(category,month) {
+  if (category.name !== "Autre") return Number(category.budget)||0;
+
+  // Les dix autres catégories sont inchangées.
+  // Autre = budget de référence + variation du salaire réel.
+  const baseOther = Number(category.budget)||0;
+  const variation = monthSalary(month) - REFERENCE_SALARY;
+  return Math.max(0,baseOther + variation);
+}
+
+function totalMonthBudget(month) {
+  return data.categories.reduce((total,c)=>total+monthBudget(c,month),0);
+}
+
+function categorySpent(month,name) {
+  return sumAmounts(monthTransactions(month).filter(t=>t.category===name));
+}
+
+function monthLabel(month) {
+  if (!month) return "";
+  const [year,mon] = month.split("-").map(Number);
+  return new Date(year,mon-1,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+}
+
+function show(page) {
+  document.querySelectorAll("main section").forEach(s=>s.classList.toggle("hidden",s.id!==page));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+
+  if (page==="stats") renderStats();
+  if (page==="expenses") renderTransactions();
+  if (page==="settings") renderSettings();
+
+  window.scrollTo(0,0);
+}
+
+function categoryHTML(category,month) {
+  const budget = monthBudget(category,month);
+  const spent = categorySpent(month,category.name);
+  const salary = monthSalary(month);
+  const used = budget > 0 ? spent/budget*100 : (spent > 0 ? 100 : 0);
+  const salaryShare = salary > 0 ? budget/salary*100 : 0;
+  const barColor = used >= 100 ? "var(--red)" : used >= 80 ? "#f1c879" : "var(--accent)";
+  const remainder = budget-spent;
+
+  return `<div class="category">
+    <div class="row"><strong>${esc(category.name)}</strong><strong>${money(budget)}</strong></div>
+    <div class="row" style="margin-top:5px">
+      <small>${pct(salaryShare)} du salaire</small>
+      <small>${money(spent)} dépensés · ${pct(used)} consommés</small>
+    </div>
+    <div class="progress"><span style="width:${Math.min(100,Math.max(0,used))}%;background:${barColor}"></span></div>
+    <small class="muted">${remainder < 0 ? "Dépassement de "+money(-remainder) : "Disponible : "+money(remainder)}</small>
+  </div>`;
+}
+
+function updateSalaryField() {
+  const month = selectedMonth("homeMonth");
+  const salary = monthSalary(month);
+  const input = document.getElementById("actualSalary");
+  input.value = salary;
+
+  const variation = salary - REFERENCE_SALARY;
+  const other = data.categories.find(c=>c.name==="Autre");
+  const otherBudget = other ? monthBudget(other,month) : 0;
+  const total = totalMonthBudget(month);
+
+  let variationText = `Variation par rapport à 2 200 € : ${variation>0?"+":""}${money(variation)}.`;
+  let note = `Budget Autre : ${money(otherBudget)}. Total des enveloppes : ${money(total)}.`;
+
+  if (salary < REFERENCE_SALARY) {
+    note += " Si Autre atteint 0 €, les enveloppes fixes peuvent dépasser le salaire.";
+  }
+
+  document.getElementById("salaryAdjustment").textContent = variationText+" "+note;
+}
+
+function render() {
+  const month = selectedMonth("homeMonth");
+  const salary = monthSalary(month);
+  const spent = sumAmounts(monthTransactions(month));
+  const remaining = salary-spent;
+  const totalBudget = totalMonthBudget(month);
+
+  document.getElementById("salaryDisplay").textContent = money(salary);
+  document.getElementById("homeSpent").textContent = money(spent);
+  document.getElementById("homeRemaining").textContent = money(remaining);
+  document.getElementById("homeRemaining").style.color = remaining<0 ? "var(--red)" : "var(--green)";
+  document.getElementById("salaryPercent").textContent = pct(salary>0 ? spent/salary*100 : 0);
+  document.getElementById("salaryBar").style.width = Math.min(100,Math.max(0,salary>0 ? spent/salary*100 : 0))+"%";
+  document.getElementById("homeBudget").textContent = money(totalBudget);
+  document.getElementById("homeSavings").textContent = money(monthBudget(data.categories.find(c=>c.name==="Épargne"),month));
+
+  document.getElementById("homeCategories").innerHTML = data.categories.map(c=>categoryHTML(c,month)).join("");
+
+  const bm = selectedMonth("budgetMonth");
+  document.getElementById("budgetTotal").textContent = money(totalMonthBudget(bm));
+  document.getElementById("budgetCategories").innerHTML = data.categories.map(c=>categoryHTML(c,bm)).join("");
+
+  document.getElementById("txCategory").innerHTML = data.categories.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+
+  updateSalaryField();
+  renderTransactions();
+  if (!document.getElementById("stats").classList.contains("hidden")) renderStats();
+}
+
+function renderTransactions() {
+  const month = selectedMonth("txMonth");
+  const host = document.getElementById("transactions");
+  const items = monthTransactions(month).slice().sort((a,b)=>b.date.localeCompare(a.date));
+
+  host.innerHTML = items.length ? items.map(t=>`
+    <div class="tx">
+      <div class="row">
+        <div>
+          <strong>${esc(t.label||t.category)}</strong>
+          <div class="muted" style="font-size:12px">${esc(t.date)} · ${esc(t.category)}</div>
+        </div>
+        <div style="text-align:right">
+          <strong>${money(t.amount)}</strong>
+          <div class="actions" style="justify-content:end;margin-top:5px">
+            <button class="secondary" onclick="editTransaction('${esc(t.id)}')">Modifier</button>
+            <button class="danger" onclick="deleteTransaction('${esc(t.id)}')">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join("") : '<p class="muted">Aucune dépense enregistrée pour ce mois.</p>';
+}
+
+function resetExpenseForm() {
+  document.getElementById("expenseForm").reset();
+  document.getElementById("editId").value = "";
+  document.getElementById("txDate").value = today();
+  document.getElementById("saveTx").textContent = "Enregistrer";
+}
+
+document.getElementById("expenseForm").addEventListener("submit",event=>{
+  event.preventDefault();
+
+  const id = document.getElementById("editId").value;
+  const tx = {
+    id: id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+    date: document.getElementById("txDate").value,
+    amount: Number(document.getElementById("txAmount").value),
+    category: document.getElementById("txCategory").value,
+    label: document.getElementById("txLabel").value.trim()
+  };
+
+  if (!tx.date || !Number.isFinite(tx.amount) || tx.amount<=0) {
+    alert("Vérifie la date et le montant de la dépense.");
+    return;
+  }
+
+  if (id) data.transactions = data.transactions.map(t=>t.id===id ? tx : t);
+  else data.transactions.push(tx);
+
+  document.getElementById("homeMonth").value = tx.date.slice(0,7);
+  document.getElementById("budgetMonth").value = tx.date.slice(0,7);
+  document.getElementById("txMonth").value = tx.date.slice(0,7);
+  document.getElementById("statsMonth").value = tx.date.slice(0,7);
+
+  resetExpenseForm();
+  persist();
+  show("expenses");
+});
+
+function editTransaction(id) {
+  const tx = data.transactions.find(t=>t.id===id);
+  if (!tx) return;
+
+  document.getElementById("editId").value = tx.id;
+  document.getElementById("txDate").value = tx.date;
+  document.getElementById("txAmount").value = tx.amount;
+  document.getElementById("txCategory").value = tx.category;
+  document.getElementById("txLabel").value = tx.label||"";
+  document.getElementById("saveTx").textContent = "Enregistrer les modifications";
+  document.getElementById("txDate").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function deleteTransaction(id) {
+  if (!confirm("Supprimer cette dépense ?")) return;
+  data.transactions = data.transactions.filter(t=>t.id!==id);
+  persist();
+}
+
+function renderStats() {
+  const month = selectedMonth("statsMonth");
+  const salary = monthSalary(month);
+  const spent = sumAmounts(monthTransactions(month));
+  const remaining = salary-spent;
+
+  document.getElementById("statsSalary").textContent = money(salary);
+  document.getElementById("statsSpent").textContent = money(spent);
+  document.getElementById("statsPercent").textContent = pct(salary>0 ? spent/salary*100 : 0);
+  document.getElementById("statsRemaining").textContent = money(remaining);
+  document.getElementById("statsRemaining").style.color = remaining<0 ? "var(--red)" : "var(--green)";
+
+  document.getElementById("statsCategories").innerHTML = data.categories.map(c=>{
+    const amount = categorySpent(month,c.name);
+    const budget = monthBudget(c,month);
+    const shareOfExpenses = spent>0 ? amount/spent*100 : 0;
+    const shareOfSalary = salary>0 ? amount/salary*100 : 0;
+    const used = budget>0 ? amount/budget*100 : (amount>0 ? 100 : 0);
+
+    return `<div class="category">
+      <div class="row"><span>${esc(c.name)}</span><strong>${money(amount)}</strong></div>
+      <div class="row"><small>${pct(shareOfExpenses)} des dépenses</small><small>${pct(shareOfSalary)} du salaire</small></div>
+      <div class="progress"><span style="width:${Math.min(100,used)}%;background:${used>=100?"var(--red)":"var(--accent)"}"></span></div>
+      <small class="muted">${pct(used)} de l'enveloppe consommés (${money(budget)} prévus)</small>
+    </div>`;
+  }).join("");
+
+  const [year,mon] = month.split("-").map(Number);
+  const months = Array.from({length:6},(_,i)=>{
+    const d = new Date(year,mon-1-(5-i),1);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  });
+  const values = months.map(m=>sumAmounts(monthTransactions(m)));
+  const max = Math.max(1,...values);
+
+  document.getElementById("monthlyChart").innerHTML = values.map((v,i)=>`
+    <div class="barcol">
+      <small style="font-size:10px">${Math.round(v)} €</small>
+      <div class="bar" style="height:${Math.max(2,v/max*100)}%"></div>
+      <span class="barlabel">${months[i].slice(5)}/${months[i].slice(2,4)}</span>
+    </div>`).join("");
+
+  document.getElementById("monthlyHistory").innerHTML = months.slice().reverse().map(m=>{
+    const s = monthSalary(m);
+    const total = sumAmounts(monthTransactions(m));
+    return `<div class="category">
+      <div class="row"><strong>${esc(monthLabel(m))}</strong><strong>${money(total)}</strong></div>
+      <div class="row"><small>Salaire reçu : ${money(s)}</small><small>${pct(s>0?total/s*100:0)} dépensés</small></div>
+      <div class="row"><small>Reste après dépenses</small><strong>${money(s-total)}</strong></div>
+    </div>`;
+  }).join("");
+}
+
+function renderSettings() {
+  document.getElementById("budgetInputs").innerHTML = data.categories.map((c,i)=>`
+    <div class="row" style="margin:9px 0">
+      <label for="budget-${i}" style="flex:1">${esc(c.name)}${c.name==="Autre"?" (base à 2 200 €)":""}</label>
+      <input id="budget-${i}" type="number" min="0" step="0.01" value="${c.budget}" style="width:120px">
+    </div>`).join("");
+
+  document.getElementById("settingsTotal").textContent = money(data.categories.reduce((s,c)=>s+c.budget,0));
+}
+
+document.getElementById("settingsForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  data.categories.forEach((c,i)=>{
+    c.budget = Math.max(0,Number(document.getElementById("budget-"+i).value)||0);
+  });
+  persist();
+  renderSettings();
+  alert("Budgets de référence enregistrés.");
+});
+
+document.getElementById("actualSalary").addEventListener("change",()=>{
+  const month = selectedMonth("homeMonth");
+  const value = document.getElementById("actualSalary").value;
+
+  if (value==="" || !Number.isFinite(Number(value)) || Number(value)<0) {
+    alert("Saisis un salaire valide, égal ou supérieur à zéro.");
+    updateSalaryField();
+    return;
+  }
+
+  setMonthSalary(month,Number(value));
+});
+
+document.getElementById("homeMonth").addEventListener("change",()=>{
+  render();
+});
+document.getElementById("budgetMonth").addEventListener("change",render);
+document.getElementById("txMonth").addEventListener("change",renderTransactions);
+document.getElementById("statsMonth").addEventListener("change",renderStats);
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "budget-sauvegarde.json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+document.getElementById("importFile").addEventListener("change",async event=>{
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const imported = JSON.parse(await file.text());
+
+    if (!Array.isArray(imported.categories) ||
+        !Array.isArray(imported.transactions)) {
+      throw new Error("Format invalide");
+    }
+
+    if (!confirm("Remplacer les données actuelles par cette sauvegarde ?")) return;
+
+    const incomingSalaries = imported.monthSalaries &&
+      typeof imported.monthSalaries==="object" ? imported.monthSalaries : {};
+
+    const categories = DEFAULT_CATEGORIES.map(([name,defaultBudget])=>{
+      const match = imported.categories.find(c=>c.name===name);
+      return {name,budget:Math.max(0,Number(match?.budget??defaultBudget)||0)};
+    });
+
+    data = {
+      salary: REFERENCE_SALARY,
+      categories,
+      transactions: imported.transactions.filter(t=>
+        t && t.id && /^\d{4}-\d{2}-\d{2}$/.test(t.date) &&
+        Number(t.amount)>0 && categories.some(c=>c.name===t.category)
+      ),
+      monthSalaries: incomingSalaries
+    };
+
+    persist();
+    alert("Sauvegarde restaurée.");
+  } catch {
+    alert("Fichier de sauvegarde invalide.");
+  } finally {
+    event.target.value="";
+  }
+});
+
+function resetAll() {
+  if (!confirm("Effacer toutes les dépenses, les salaires mensuels et les budgets personnalisés ? Cette action est irréversible sans sauvegarde.")) return;
+
+  localStorage.removeItem(STORAGE_KEY);
+  data = {
+    salary: REFERENCE_SALARY,
+    categories: DEFAULT_CATEGORIES.map(([name,budget])=>({name,budget})),
+    transactions: [],
+    monthSalaries: {}
+  };
+  persist();
+  show("home");
+}
+
+// Initialisation
+loadData();
+
+const initialMonth = currentMonth();
+document.getElementById("homeMonth").value = initialMonth;
+document.getElementById("budgetMonth").value = initialMonth;
+document.getElementById("txMonth").value = initialMonth;
+document.getElementById("statsMonth").value = initialMonth;
+document.getElementById("txDate").value = today();
+
+render();
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .catch((error) => {
+          console.error("Erreur du service worker :", error);
+        });
+    });
+  }
+</script>
+  
+</body>
+</html>
